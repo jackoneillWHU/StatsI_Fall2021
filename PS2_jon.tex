@@ -1,0 +1,309 @@
+\documentclass[12pt,letterpaper]{article}
+\usepackage{graphicx,textcomp}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{fullpage}
+\usepackage{color}
+\usepackage[reqno]{amsmath}
+\usepackage{amsthm}
+\usepackage{fancyvrb}
+\usepackage{amssymb,enumerate}
+\usepackage[all]{xy}
+\usepackage{endnotes}
+\usepackage{lscape}
+\newtheorem{com}{Comment}
+\usepackage{float}
+\usepackage{hyperref}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+\usepackage[compact]{titlesec}
+\usepackage{dcolumn}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{multirow}
+\usepackage{xcolor}
+\newcolumntype{.}{D{.}{.}{-1}}
+\newcolumntype{d}[1]{D{.}{.}{#1}}
+\definecolor{light-gray}{gray}{0.65}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+\lstset{style=mystyle}
+\newcommand{\Sref}[1]{Section~\ref{#1}}
+\newtheorem{hyp}{Hypothesis}
+
+\title{Problem Set 2}
+\date{Due: October 15, 2021}
+\author{Applied Stats/Quant Methods 1}
+
+\begin{document}
+	\maketitle
+	\section*{Instructions}
+	\begin{itemize}
+		\item Please show your work! You may lose points by simply writing in the answer. If the problem requires you to execute commands in \texttt{R}, please include the code you used to get your answers. Please also include the \texttt{.R} file that contains your code. If you are not sure if work needs to be shown for a particular problem, please ask.
+		\item Your homework should be submitted electronically on GitHub in \texttt{.pdf} form.
+		\item This problem set is due before class on Friday October 15, 2021. No late assignments will be accepted.
+		\item Total available points for this homework is 100.
+	\end{itemize}
+	
+	
+	\vspace{.5cm}
+	\section*{Question 1 (40 points): Political Science}
+	\vspace{.25cm}
+	The following table was created using the data from a study run in a major Latin American city.\footnote{Fried, Lagunes, and Venkataramani (2010). ``Corruption and Inequality at the Crossroad: A Multimethod Study of Bribery and Discrimination in Latin America. \textit{Latin American Research Review}. 45 (1): 76-97.} As part of the experimental treatment in the study, one employee of the research team was chosen to make illegal left turns across traffic to draw the attention of the police officers on shift. Two employee drivers were upper class, two were lower class drivers, and the identity of the driver was randomly assigned per encounter. The researchers were interested in whether officers were more or less likely to solicit a bribe from drivers depending on their class (officers use phrases like, ``We can solve this the easy way'' to draw a bribe). The table below shows the resulting data.
+	
+	\newpage
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{l | c c c }
+			& Not Stopped & Bribe requested & Stopped/given warning \\
+			\\[-1.8ex] 
+			\hline \\[-1.8ex]
+			Upper class & 14 & 6 & 7 \\
+			Lower class & 7 & 7 & 1 \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\begin{enumerate}
+		
+		\item [(a)]
+		Calculate the $\chi^2$ test statistic by hand (even better if you can do "by hand" in \texttt{R}).\\
+		\vspace{0.5cm}
+		The $\chi^2$ is calculated using the following formula:
+		\vspace{0.5cm}
+		\[\tilde{\chi}^2=\frac{1}{d}\sum_{k=1}^{n} \frac{(O_k - E_k)^2}{E_k}\]
+		First we need to find the expected values, presented in the table below. Once these are found we plug them into our formula
+		\vspace{0.5cm}
+			\begin{table}[h!]
+			\centering
+			\begin{tabular}{l | c c c }
+				& Not Stopped & Bribe requested & Stopped/given warning \\
+				\\[-1.8ex] 
+				\hline \\[-1.8ex]
+				Upper class & 27/42*21=13.5 & 27/42*13=8.35 & 27/42*8=5.14 \\
+				Lower class & 15/42*21=7.5 & 15/42*13=4.46 & 15/42*8=2.86 \\
+				\hline
+			\end{tabular}
+		\end{table}
+		\vspace{2cm}
+			\[\tilde{\chi}^2=\frac{1}{d}\sum_{k=1}^{n} \frac{(O_k - E_k)^2}{E_k}\]
+		\vspace{1cm}
+			\begin{table}[h!]
+			\centering
+			\begin{tabular}{l | c c c c}
+				& Not Stopped & Bribe requested & Stopped/given warning & Chi Squared \\
+				\\[-1.8ex] 
+				\hline \\[-1.8ex]
+				Upper class & 0.0185 & 0.0618 & 0.673 &  \\
+				Lower class & 0.0333  & 1.2 & 1.207 &  \\
+				Chi Squared & & & & 3.1936 \\ 
+				\hline
+			\end{tabular}
+		\end{table}
+	\vspace{1cm}
+		
+		\item [(b)]
+		Now calculate the p-value from the test statistic you just created (in \texttt{R}).\footnote{Remember frequency should be $>$ 5 for all cells, but let's calculate the p-value here anyway.}  What do you conclude if $\alpha = .1$?\\
+		\vspace{0.5cm}
+		
+		The p-value is the probability of obtaining a chi-square as large or larger than that in the current experiment and yet the data will still support the hypothesis. It is the probability of deviations from what was expected being due to mere chance.	To find it in r we use the following line of code: 
+		\vspace{0.25cm}
+		\lstinputlisting[language=R, firstline=13, lastline=15]{PS2_jon.R}  
+		\vspace{0.25cm}
+		With $\alpha = .1$?, when we reference the table we find a critical vale of 9.210. 
+		As our p value is 0.2849114 (less than the critical value) we would fail to reject our null hypotheses that the variables are statistically indepenent.
+		
+
+		
+		\newpage
+		\item [(c)] Calculate the standardized residuals for each cell and put them in the table below.
+		\vspace{1cm}
+		\lstinputlisting[language=R, firstline=13, lastline=14]{PS2_jon.R}  
+		\vspace*{1cm}
+		\begin{table}[h]
+			\centering
+			\begin{tabular}{l | c c c }
+				& Not Stopped & Bribe requested & Stopped/given warning \\
+				\\[-1.8ex] 
+				\hline \\[-1.8ex]
+				Upper class & 0.32 & -1.64 &  1.52 \\
+				\\
+				Lower class & -0.32 &  1.64 & -1.52  \\
+				
+			\end{tabular}
+		\end{table}
+		
+		
+		\vspace{5cm}
+		\item [(d)] How might the standardized residuals help you interpret the results?  \vspace{1cm}
+		
+		Standardized residuals are useful in helping to interpret chi-square tables by providing information about which cells contribute to a significant chi-square.
+		
+		If the chi squared test is significant we need to take a look at residuals.
+		
+		If the value of standardized residual is lower than -2 it means that the cell contains fewer observations that it was expected (the case of variables independence). If the value of standardized residual is higher than 2 it means that the cell contains more observations that it was expected.
+		
+		This is not the case for any of our cells. 
+	
+		
+		
+	\end{enumerate}
+	\newpage
+	
+	\section*{Question 2 (20 points): Economics}
+	Chattopadhyay and Duflo were interested in whether women promote different policies than men.\footnote{Chattopadhyay and Duflo. (2004). ``Women as Policy Makers: Evidence from a Randomized Policy Experiment in India. \textit{Econometrica}. 72 (5), 1409-1443.} Answering this question with observational data is pretty difficult due to potential confounding problems (e.g. the districts that choose female politicians are likely to systematically differ in other aspects too). Hence, they exploit a randomized policy experiment in India, where since the mid-1990s, $\frac{1}{3}$ of village council heads have been randomly reserved for women. A subset of the data from West Bengal can be found at the following link: \url{https://raw.githubusercontent.com/kosukeimai/qss/master/PREDICTION/women.csv}\\
+	
+	\noindent Each observation in the data set represents a village and there are two villages associated with one GP (i.e. a level of government is called "GP"). Figure~\ref{fig:women_desc} below shows the names and descriptions of the variables in the dataset. The authors hypothesize that female politicians are more likely to support policies female voters want. Researchers found that more women complain about the quality of drinking water than men. You need to estimate the effect of the reservation policy on the number of new or repaired drinking water facilities in the villages.
+	\vspace{.5cm}
+	\begin{figure}[h!]
+		\caption{\footnotesize{Names and description of variables from Chattopadhyay and Duflo (2004).}}
+		\vspace{.5cm}
+		\centering
+		\label{fig:women_desc}
+	\end{figure}		
+	
+	\newpage
+	\begin{enumerate}
+		\item [(a)] State a null and alternative (two-tailed) hypothesis. 
+		\vspace{1cm}
+		Null Hypothesis: There is a relationship between reservation policies and drinking water facilities. Areas with reserved GP's for women will have higher amounts of new and repaired drinking water facilities 
+		
+		Alternative Hypothesis: There is not a relationship between reservation policies and drinking water facilities. Areas with reserved GP's for women will not have higher amounts of new and repaired drinking water facilities 
+		
+		\vspace{2cm}
+		\item [(b)] Run a bivariate regression to test this hypothesis in \texttt{R} (include your code!).
+		\vspace{1cm}
+		\lstinputlisting[language=R, firstline=50, lastline=62]{PS2_jon.R}  
+		\vspace*{1cm}
+		
+		
+		\vspace{2cm}
+		\item [(c)] Interpret the coefficient estimate for reservation policy. 
+		\vspace{1cm}
+		We get a p value of 0.0197 for reservation policy, meaning that women's representation has a statistically significant effect on the presence of new or repaired water reservations.  
+
+	\end{enumerate}
+	
+	\newpage
+	\section*{Question 3 (40 points): Biology}
+	
+	There is a physiological cost of reproduction for fruit flies, such that it reduces the lifespan of female fruit flies.  Is there a similar cost to male fruit flies?  This dataset contains observations from five groups of 25 male fruit flies. The experiment tests if increased reproduction reduces longevity for male fruit flies. The five groups are: males forced to live alone, males assigned to live with one or eight newly pregnant females (non-receptive females), and males assigned to live with one or eight virgin females (interested females). The name of the data set is \texttt{fruitfly.csv}.\footnote{Partridge and Farquhar (1981).``Sexual Activity and the Lifespan of Male Fruitflies''. \textit{Nature}. 294, 580-581.}
+	\vspace{1cm}
+	
+	\begin{tabular}{r|l}
+		\texttt{No} & serial number (1-25) within each group of 25\\
+		\texttt{type} & Type of experimental assignment \\
+		& \hspace{0.1in} $1=$ no females  \\
+		& \hspace{0.1in} $2=$ 1 newly pregnant female \\
+		& \hspace{0.1in} $3=$ 8 newly pregnant females\\
+		& \hspace{0.1in} $4=$ 1 virgin female\\
+		& \hspace{0.1in} $5=$ 8 virgin females\\
+		\texttt{lifespan} & lifespan (days)\\
+		\texttt{thorax} & length of thorax (mm)\\
+		\texttt{sleep} & percentage of each day spent sleeping\\
+	\end{tabular}
+	\vspace{1cm}
+	\begin{enumerate}
+		
+		\item
+		Import the data set and obtain summary statistiscs and examine the distribution of the overall lifespan of the fruitflies.  
+		
+	\vspace{.5cm}
+	\lstinputlisting[language=R, firstline=70, lastline=83]{PS2_jon.R}  
+	\includegraphics{density_lifespan.png}
+	\vspace{.5cm}
+	
+  
+ 
+		
+		\newpage
+		\item
+		Plot \texttt{lifespan} vs \texttt{thorax}. Does it look like there is a linear relationship? Provide the plot. What is the correlation coefficient between these two variables?
+		\vspace{0.25cm}
+		\lstinputlisting[language=R, firstline=85, lastline=89]{PS2_jon.R}  
+		\vspace{0.25cm}
+		When we look at the scatter plot of lifespan and thorax for interpretation it appears as if there is a strong positive relationship between the two variables, although there is some dispersion. 
+		
+		
+		
+		The correlation coefficient is 0.6365. This would be in line with out visual interpretation that there is a positive correlation between the two variables. 
+		
+		
+	
+		\includegraphics{scatterplot_Q3_PS2.png}
+        \vspace{1.25cm}
+		\item
+		Regress \texttt{lifespan} on \texttt{thorax}.  Interpret the slope of the fitted model.
+		\vspace{0.25cm}
+		\lstinputlisting[language=R, firstline=91, lastline=98]{PS2_jon.R}
+		\includegraphics{regression_Q3_PS2.png}
+        \vspace{1.25cm}
+		\vspace{6cm}
+		\item
+		Test for a significant linear relationship between  \texttt{lifespan} and \texttt{thorax}. Provide and interpret your results of your test.
+		\vspace{0.25cm}
+		
+		\vspace{0.25cm}
+		If there is a significant linear relationship between the independent variable X and the dependent variable Y, the slope will not equal zero. The null hypothesis states that the slope is equal to zero, and the alternative hypothesis states that the slope is not equal to zero.
+		
+		\newpage
+		\item
+		
+		Provide the 90\% confidence interval for the slope of the fitted model.
+		
+		\vspace{.5cm}
+		\begin{itemize}
+			\item
+			Use the formula of confidence interval.		\vspace{.5cm}
+			\item
+			Use the function  \texttt{confint()}  in \texttt{R} .
+		\end{itemize}
+		\vspace{1cm}
+		\lstinputlisting[language=R, firstline=119, lastline=125]{PS2_jon.R}
+		\vspace{1cm}
+		\includegraphics{CI_plots.png}
+		\vspace{6cm}
+		\item Use the \texttt{predict()} function in \texttt{R} to (1) predict an individual fruitfly's lifespan when \texttt{thorax}=0.8 and (2) the average \texttt{lifespan} of fruitflies when \texttt{thorax}=0.8 by the fitted model. This requires that you compute prediction and confidence intervals. What are the expected values of lifespan? What are the prediction and confidence intervals around the expected values? 
+		\vspace{1cm}
+		\lstinputlisting[language=R, firstline=101, lastline=115]{PS2_jon.R}
+		
+		\vspace{6cm}
+		\item	For a sequence of \texttt{thorax} values, draw a plot with their fitted values for \texttt{lifespan}, as well as the prediction intervals and confidence intervals.
+		\vspace{1cm}
+		\lstinputlisting[language=R, firstline=127, lastline=150]{PS2_jon.R}
+		\vspace{1cm}
+		\includegraphics{q7_PS2.png}
+		
+		
+		
+	\end{enumerate}
+\end{document}
