@@ -1,0 +1,123 @@
+---
+title: "Tutorial 8"
+author: "Martyn Egan"
+date: "16/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 999)
+library(tidyverse)
+library(broom)
+#install.packages("stargazer")
+library(stargazer)
+```
+
+## Recap
+
+```{r data, include=FALSE}
+salary <- read_csv("https://raw.githubusercontent.com/ASDS-TCD/StatsI_Fall2021/main/datasets/salary.csv")
+```
+
+Last week we looked at how to do multiple linear regression in R, including visualising our results to aid interpretation. In particular, we looked at the relationship between salary, grants and gender in the `salary` dataset.
+
+```{r plot 1}
+ggplot(salary, aes(Avg_Cont_Grants, Salary_9_mo, group = Gender)) +
+  geom_point(alpha = 0.5, aes(colour = Gender)) +
+  geom_smooth(method = "lm", aes(colour = Gender))
+```
+
+This plot was an example of an interaction effect between a categorical (dummy) variable and a continuous variable. What about two categorical variables?
+
+### Homework exercise
+
+The homework exercise asked you to add pay grade to the mix.
+
+```{r plot 2}
+ggplot(salary, aes(-Rank_Code, # we use "-" here because rank is in reverse order
+                   Salary_9_mo, 
+                   colour = Gender,
+                   size = Avg_Cont_Grants)) +
+  geom_jitter(alpha = 0.5) #a good use case for jittering!
+```
+
+I think this is quite a powerful visualisation: how would you interpret it to an audience of policy makers?
+
+Let's make two regression models now: one with an additive relationship, another with a interaction effect between pay grade and gender. Try to think what kind of difference you would expect to see in visualising these two different models.
+
+```{r regression models, results = "asis"}
+# This is an additive model
+mod1 <- lm(data = salary, Salary_9_mo ~ Rank_Code + Gender + Avg_Cont_Grants)
+
+# This is an interaction model between two dummy vars
+mod2 <- lm(data = salary, Salary_9_mo ~ Rank_Code * Gender + Avg_Cont_Grants)
+
+stargazer(mod1, mod2, type = "html", title = "Regression Results")
+```
+
+Let's have a look at the scatter plots:
+
+```{r scatter plots}
+ggplot(salary, aes(Avg_Cont_Grants, Salary_9_mo)) +
+  geom_point(aes(colour = factor(Rank_Code))) +
+  geom_line(data = augment(mod1), aes(y = .fitted, 
+                                      linetype = Gender, 
+                                      colour = factor(Rank_Code))) +
+  ggtitle("Additive model")
+
+ggplot(salary, aes(Avg_Cont_Grants, Salary_9_mo)) +
+  geom_point(aes(colour = factor(Rank_Code))) +
+  geom_line(data = augment(mod2), aes(y = .fitted, 
+                                      linetype = Gender, 
+                                      colour = factor(Rank_Code))) +
+  ggtitle("Interaction model")
+```
+
+Is this what you expected? In the first scatter plot (the additive model) the distance between genders is constant at all pay grades. In the second model, we see that most of the effect of gender on the pay gap comes in the top pay grade. Indeed, the gap is almost non-existent at the lowest grade. This is what our first visualisation also showed us, in a perhaps more intuitive way. A final note here about the significance of our model: our interaction term is not statistically significant, yet we can see from the scatterplot that it plays a substantive role in predicting income. What's going on here?
+
+```{r mod3, results = "asis"}
+# Adding an interaction between grants and pay grade
+mod3 <- lm(data = salary, Salary_9_mo ~ Rank_Code + Gender + Avg_Cont_Grants + Rank_Code:Gender + Rank_Code:Avg_Cont_Grants)
+
+stargazer(mod1, mod2, mod3, type = "html", title = "Regression Results")
+```
+
+# Mini Project
+
+Now that we know how to do multiple linear regression in R, we're going to put our skills to the test. Let's read in a completely new dataset:
+
+```{r newdata}
+houses <- read.csv("https://raw.githubusercontent.com/gedeck/practical-statistics-for-data-scientists/master/data/house_sales.csv", sep = "\t")
+```
+
+We're going to spend the rest of class on a mini project. The `houses` dataset is adapted from the King County (Seattle) tax assessors database, available in the "Practical Statistics for Data Scientists" (O'Reilly) book. It contains prices for 22687 houses, alongside a series of additional variables including size of property, the year the property was built, etc. We want to use house price (AdjSalePrice) as our outcome variable, and to find a number of predictor variables that are significantly associated with house price.
+
+We have 4 tasks in our workflow: explore our dataset; generate some hypotheses; test these hypotheses with a regression; and interpret the outcome of that regression.
+
+## EDA
+
+```{r eda}
+# summary stats
+
+# visualisations
+
+```
+
+## Hypotheses
+
+
+
+## Regression
+
+```{r regression}
+#model 1
+
+#model 2
+
+#model 3
+
+```
+
+## Interpretation
+
