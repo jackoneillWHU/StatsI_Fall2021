@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 8"
+title: "Tutorial 8 - revised"
 author: "Martyn Egan"
 date: "16/11/2021"
 output: html_document
@@ -48,10 +48,10 @@ Let's make two regression models now: one with an additive relationship, another
 
 ```{r regression models, results = "asis"}
 # This is an additive model
-mod1 <- lm(data = salary, Salary_9_mo ~ Rank_Code + Gender + Avg_Cont_Grants)
+mod1 <- lm(data = salary, Salary_9_mo ~ as.factor(Rank_Code) + Gender + Avg_Cont_Grants)
 
 # This is an interaction model between two dummy vars
-mod2 <- lm(data = salary, Salary_9_mo ~ Rank_Code * Gender + Avg_Cont_Grants)
+mod2 <- lm(data = salary, Salary_9_mo ~ as.factor(Rank_Code) * Gender + Avg_Cont_Grants)
 
 stargazer(mod1, mod2, type = "html", title = "Regression Results")
 ```
@@ -59,18 +59,22 @@ stargazer(mod1, mod2, type = "html", title = "Regression Results")
 Let's have a look at the scatter plots:
 
 ```{r scatter plots}
-ggplot(salary, aes(Avg_Cont_Grants, Salary_9_mo)) +
-  geom_point(aes(colour = factor(Rank_Code))) +
-  geom_line(data = augment(mod1), aes(y = .fitted, 
-                                      linetype = Gender, 
-                                      colour = factor(Rank_Code))) +
-  ggtitle("Additive model")
+mod1_aug <- augment(mod1)
 
 ggplot(salary, aes(Avg_Cont_Grants, Salary_9_mo)) +
   geom_point(aes(colour = factor(Rank_Code))) +
-  geom_line(data = augment(mod2), aes(y = .fitted, 
+  geom_line(data = mod1_aug, aes(y = .fitted, 
                                       linetype = Gender, 
-                                      colour = factor(Rank_Code))) +
+                                      colour = `as.factor(Rank_Code)`)) +
+  ggtitle("Additive model")
+
+mod2_aug <- augment(mod2)
+
+ggplot(salary, aes(Avg_Cont_Grants, Salary_9_mo)) +
+  geom_point(aes(colour = factor(Rank_Code))) +
+  geom_line(data = mod2_aug, aes(y = .fitted, 
+                                      linetype = Gender, 
+                                      colour = `as.factor(Rank_Code)`)) +
   ggtitle("Interaction model")
 ```
 
@@ -78,7 +82,7 @@ Is this what you expected? In the first scatter plot (the additive model) the di
 
 ```{r mod3, results = "asis"}
 # Adding an interaction between grants and pay grade
-mod3 <- lm(data = salary, Salary_9_mo ~ Rank_Code + Gender + Avg_Cont_Grants + Rank_Code:Gender + Rank_Code:Avg_Cont_Grants)
+mod3 <- lm(data = salary, Salary_9_mo ~ as.factor(Rank_Code) + Gender + Avg_Cont_Grants + as.factor(Rank_Code):Gender + as.factor(Rank_Code):Avg_Cont_Grants)
 
 stargazer(mod1, mod2, mod3, type = "html", title = "Regression Results")
 ```

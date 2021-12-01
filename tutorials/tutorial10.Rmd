@@ -1,0 +1,173 @@
+---
+title: "Regression Diagnosis"
+author: "Martyn Egan"
+date: "30/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this week's class we will be looking a bit deeper into how to interpret our regression models and diagnose any problems. We'll be using these packages, and setting scipen = 999 in the `options` function:
+
+```{r packages, message=FALSE}
+library(tidyverse)
+library(stargazer)
+#install.packages("car")
+library(car)
+#install.packages("plotly")
+library(plotly)
+
+options(scipen = 999)
+```
+
+## Our Mini Project
+
+Let's turn back to our mini project: house prices in the King County Housing Data. We'll load in our dataset again, and also the code for transforming the zipcode variable. This week we'll use total living space (rather than lot), because the distribution of the data is a but more manageable.
+
+```{r King County dataset and model}
+houses <- read.csv("https://raw.githubusercontent.com/gedeck/practical-statistics-for-data-scientists/master/data/house_sales.csv", sep = "\t")
+
+hmod1 <- lm(AdjSalePrice ~ SqFtTotLiving + BldgGrade, houses) # our first model
+
+zip_groups <- houses %>% # our dplyr code for creating a 3-level grouping for zipcode
+  mutate(resid = resid(hmod1)) %>%
+  group_by(ZipCode) %>%
+  summarise(median = median(resid),
+            n = n()) %>%
+  arrange(desc(median)) %>%
+  mutate(sum_n = cumsum(n),
+         ZipGroup = ntile(sum_n, 3)) 
+
+houses <- houses %>% # joining the zipcode groups to our original dataset
+  left_join(select(zip_groups, ZipCode, ZipGroup), by = "ZipCode")
+
+hmod2 <- lm(AdjSalePrice ~ SqFtTotLiving + BldgGrade + as.factor(ZipGroup), houses) # new model with location included
+```
+
+## Our two models (with and without location)
+
+At the end of last week's class we had two models, one which took into account the location of our properties, and the other which did not. Let's compare the outputs again using the `stargazer` package.
+
+```{r models, results="asis"}
+stargazer(hmod1, hmod2, type = "html")
+```
+
+Let's also visualise this second model in a scatterplot.
+
+```{r scatterplot hmod3}
+ggplot(houses, aes(SqFtTotLiving, AdjSalePrice, colour = as.factor(ZipGroup))) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(colour = as.factor(ZipGroup)))
+```
+
+## Visualising multivariate models
+
+What's missing from our scatterplot? We ran a regression with three predictor variables (house size, building grade, and location). Our scatterplot though only shows the relationship between two of these - house size and location. 
+
+When visualising a regression, it's fairly easy to add in categorical variables: we can just change the shape or colour of the points to indicate levels of a variable. But what about visualising the relationship between two predictor variables and an outcome? 
+
+We could try a 3D plot. There are some packages which let us do this, such as `plotly`.
+
+```{r a plotly 3D plot}
+plot_ly(data = houses, z = ~AdjSalePrice, x = ~SqFtTotLiving, y = ~BldgGrade, 
+        color = ~as.factor(ZipGroup))
+```
+
+We could add a regression plane to this, or even three planes (one for each zipcode group). But already it's a bit difficult to see what's going on. And what about when we have three or more continuous predictor variables?
+
+## Partial Regression and Partial Residual Plots
+
+When dealing with higher dimensions, we need to start thinking in terms of our model as a whole. There are a couple of ways of plotting which allow us to see the partial effects of specific predictor variables, *taking into effect all other predictor variables*. One of these is a **partial regression** plot. 
+
+You might remember back to week 4, when we did a residual plot of a bivariate regression: on our x axis, we plotted the values of the predictor variable as usual, but on the y axis, instead of the value of the outcome variable, we plotted the *residuals*, i.e. the bits left over from our model's prediction. This helped us to see in which ranges of our data our model was good at predicting, and which areas it wasn't. 
+
+Let's refresh our memories by doing a quick residual plot of a bivariate regression of property size and sale price.
+
+```{r bivar residual plot}
+hmod_bv <- lm(AdjSalePrice ~ SqFtTotLiving, data = houses) # bivariate regression model
+
+scatter.smooth(houses$SqFtTotLiving, resid(hmod_bv), # plot a smooth line on the scatter plot
+               lpars = list(col = "blue", lwd = 3, lty = 3), 
+               main = "Residual Plot (Sale Price ~ Size)")
+abline(h = 0, col = "red") # plot a horizontal line through zero
+```
+
+Here, I've added a smooth line through the residuals to see where my residuals are, on average, above or below my regression line.
+
+When we extend our model to multiple variables, we can use residuals to visualise the effect of one predictor variable against our outcome variable, *taking into account* our other predictor variables - i.e., holding their effect constant. A **partial regression plot** (sometimes also called an added variable plot) uses residuals to *partial out* the effects of other variables, allowing us to see something a bit like a bivariate scatter plot. The `car` package allows us to create added variable plots.
+
+```{r added variable plot}
+par(mfrow = c(1,1))
+avPlot(hmod2, variable = "SqFtTotLiving")
+avPlot(hmod2, variable = "BldgGrade")
+```
+
+With a partial regression plot, the slope of the line is always the same as the coefficient of the predictor variable within the overall regression model; the constant of the line is always zero (these are residuals we're plotting!)
+
+Partial regression plots help us to see extreme points, and to determine whether our residuals are evenly distributed across the range of our predictor variable - basically, we can interpret them similar to the bivariate residual plots we have already encountered.
+
+A disadvantage of partial regression plots is that, unlike in our bivariate residual plots, the x-axis no longer shows us the original value of our predictor variable, but rather the residuals. 
+
+By contrast, **partial residual plots** keep the x axis in terms of the original predictor variable,  while on the y axis they plot the residual from the full regression combined with the predicted value from the single predictor. The result is an estimate of the single predictor's contribution to the outcome. 
+
+Let's see an example using property size as the predictor variable.
+
+```{r partial residual plot}
+terms <- predict(hmod2, type = "terms") # extract the individual regression terms from our model for each observation
+
+partial_resid <- resid(hmod2) + terms # add the individual regression terms to the residual for each observation
+
+df <- data.frame(SqFtTotLiving = houses[, "SqFtTotLiving"], # create a new data.frame of these vals
+                 Terms = terms[, "SqFtTotLiving"],
+                 PartialResid = partial_resid[, "SqFtTotLiving"])
+
+ggplot(df, aes(SqFtTotLiving, PartialResid)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth() +
+  geom_line(aes(SqFtTotLiving, Terms), colour = "red")
+```
+
+Our partial residual plot is an estimate of the contribution that `SqFtTotLiving` adds to the sales price, taking into account our other predictors. What's the advantage of a partial residual plot compared to a partial regression plot? Here, we can see that our fitted line (in red) isn't doing a great job compared with the smooth line that `ggplot` adds. It underestimates the value of small properties, overestimates mid-sized properties, and underestimates very large properties. This suggests we may need to use a non-linear term to model the relationship between `AdjSalePrice` and `SqFtTotLiving`. We can't really see this as clearly in the partial regression plot.
+
+## Adding a Polynomial Term
+
+It looks like a simple quadratic polynomial, (i.e. of the form X^2), might give us a better fitting line for `SqFtTotLiving` than a simple linear model. Let's try creating a model with a quadratic term using R's built-in `poly()` function.
+
+```{r polynomial, results="asis"}
+hmod3 <- lm(AdjSalePrice ~ poly(SqFtTotLiving, 2) # use poly() function
+            + BldgGrade + as.factor(ZipGroup), data = houses)
+
+stargazer(hmod1, hmod2, hmod3, type = "html")
+```
+
+And plotting the new regression line:
+
+```{r polynomial plot}
+terms_poly <- predict(hmod3, type = "terms") # extract the individual regression terms from our model for each observation
+
+partial_resid_poly <- resid(hmod3) + terms_poly # add the individual regression terms to the residual for each observation
+
+df_poly <- data.frame(SqFtTotLiving = houses[, "SqFtTotLiving"], # create a new data.frame of these vals
+                 Terms = terms_poly[, "poly(SqFtTotLiving, 2)"],
+                 PartialResid = partial_resid_poly[, "poly(SqFtTotLiving, 2)"])
+
+ggplot(df_poly, aes(SqFtTotLiving, PartialResid)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth() +
+  geom_line(aes(SqFtTotLiving, Terms), colour = "red")
+```
+
+As we can see from our new partial residual plot, adding the polynomial term brings our fitted line much closer to the `ggplot` smooth line. We've also improved our R^2 to 0.67, and reduced our residual standard error by almost another twenty thousand dollars. The only real issue is the interpretation. How would you interpret these coefficients? 
+
+## Last Comments
+
+Partial regression and partial residual plots can be hard to wrap your head around. Try to think of them as aids to interpretation and diagnosis. Another handy tool is R's built in `plot()` function: when you run this on an `lm` object, it will give you some useful diagnosis plots to help you check for outliers and non-normality. Check the following code -
+
+```{r using base r plot}
+par(mfrow = c(2, 2)) # we change the graphic device to show 4 plots at once
+plot(hmod3) # we supply our lm object to plot()
+```
+
+A quick look at the output leads me to think we're fairly ok with most of our assumptions for this dataset. What do you think? 

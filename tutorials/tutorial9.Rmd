@@ -1,0 +1,159 @@
+---
+title: "Tutorial 9"
+author: "Martyn Egan"
+date: "23/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(stargazer)
+```
+
+### (Another) Recap: Dummy Variables - Fixing Mistakes!
+
+Last week's tutorial contained quite a bad mistake, but hopefully in correcting it we can learn a bit more about how R (and regression) works.
+
+```{r data, include=FALSE}
+salary <- read.csv("https://raw.githubusercontent.com/ASDS-TCD/StatsI_Fall2021/main/datasets/salary.csv")
+```
+
+Let's create our basic bivariate regression model again, `mod1`
+
+```{r mod1}
+# A basic bivariate regression of salary on grants
+mod1 <- lm(Salary_9_mo~Avg_Cont_Grants, data = salary)
+```
+
+Here's what we did last time: we made a second model with salary rank (a categorical variable) added.
+
+```{r mod2}
+mod2 <- lm(Salary_9_mo~Avg_Cont_Grants + Rank_Code, data = salary)
+```
+
+Let's plot this regression, using base R's `plot()` function and `abline()`.
+
+```{r mod2 plot}
+plot(salary$Avg_Cont_Grants, salary$Salary_9_mo, 
+     type = "p", pch = 20, col = c("red", "blue", "green")[salary$Rank_Code])
+abline(mod2$coefficients[1], mod2$coefficients[2], col = "red")
+abline(mod2$coefficients[1] + mod2$coefficients[3], mod2$coefficients[2], col = "blue")
+abline(mod2$coefficients[1] + mod2$coefficients[3]*2, mod2$coefficients[2], col = "green")
+```
+
+Plotting the model this way, it becomes pretty obvious (I think) what the mistake was. Can you see it?
+
+The lines are parallel (which we expect), but also equidistant from each other (which we do not). Looking at the distribution of the dots, we can see for instance that the blue and green lines (for 2nd and 3rd pay grades) are too high up on the y axis. They don't represent the "mean" point for those categories. What went wrong?
+
+### Factors
+
+Let's examine our `salary$Rank_Code`
+
+```{r rank code}
+class(salary$Rank_Code)
+```
+
+As we see, Rank_Code is an integer. This is the default class which `read.csv()` **and** `read_csv()` both cast a variable of integers into, even if it's fairly obvious we're dealing with a (coded) categorical variable. By default, the `lm()` function will handle a variable of class integer as a continuous variable.
+
+What does this mean from the perspective of linear regression? Essentially, our three grades of salary rank (1, 2, 3) are being treated as levels of an ordered, *interval* variable, i.e. grades one through three represent quantities between which the distance is strictly bounded (such as temperature or IQ score).
+
+This is almost always wrong when dealing with categorical variables. Indeed, there is a large literature on why scale variables (such as Likert scales) should not be treated as interval variables (though some disagree).
+
+Luckily this is a quick fix. We can use the `as.factor()` function to coerce a variable into class factor for the purposes of our regression.
+
+```{r fixing the problem}
+mod3 <- lm(data = salary, Salary_9_mo ~ Avg_Cont_Grants + as.factor(Rank_Code))
+
+plot(salary$Avg_Cont_Grants, salary$Salary_9_mo, 
+     type = "p", pch = 20, col = c("red", "blue", "green")[salary$Rank_Code])
+abline(mod3$coefficients[1], mod3$coefficients[2], col = "red")
+abline(mod3$coefficients[1] + mod3$coefficients[3], mod3$coefficients[2], col = "blue")
+abline(mod3$coefficients[1] + mod3$coefficients[4], mod3$coefficients[2], col = "green")
+
+```
+
+This is more like the solution we were looking for: the lines pass through the y axis at different points, and the lines more clearly match with the distribution of dots for each rank. Let's compare the two models side by side and see what's happening:
+
+```{r models, results = "asis"}
+stargazer(mod2, mod3, type = "html")
+```
+
+As we can see, in the first model there is just one coefficient for Rank_Code: this means that for every additional "1" in our Rank_Code, the model is going to subtract \$16,800, regardless of the specifics of that particular level of the variable. The second model has separate coefficients for grades 2 and 3, allowing us to interpret the association specific to each level, i.e. compared with those in grade 1, a grade 2 employee is paid, on average, \$22,500 less, while a grade 3 employee is paid \$30,600 less.
+
+Does this affect our models? Let's see. Below, we have our model from last week including the interaction effect with gender. Model 4 is with Rank_Code "as is", model 5 is with Rank_Code as a factor. What changes?
+
+```{r comparing models, results = "asis"}
+mod4 <- lm(data = salary, Salary_9_mo ~ Avg_Cont_Grants + Rank_Code * Gender)
+mod5 <- lm(data = salary, Salary_9_mo ~ Avg_Cont_Grants + as.factor(Rank_Code) * Gender)
+stargazer(mod4, mod5, type = "html")
+```
+
+The "big" change is that gender ceases to be statistically significant in the new model. Why might that be? Does this mean our new model is "better" or "worse"?
+
+A final couple of points: we don't (generally) have this problem with ggplot, because when you supply a vector to an argument such as `colour =` or `group =`, ggplot will automatically coerce that vector into a factor (as well as run an interaction model!)
+
+Also, this isn't an issue that arises with a simple binary dummy (0/1 or TRUE/FALSE). Why might that be?
+
+Lastly, is there any difference between running a regression on a factor variable, and manually creating a series of "dummy" columns? Let's check, using Jeff's code from Friday.
+
+```{r comparing dummies, results = "asis"}
+salary$rank_d1 <- rep(0, nrow(salary))
+salary$rank_d2 <- rep(0, nrow(salary))
+salary[which(salary$Rank_Code == 3), "rank_d1"] <- as.factor("1")
+salary[which(salary$Rank_Code == 2), "rank_d2"] <- as.factor("1")
+mod6 <- lm(Salary_9_mo~Avg_Cont_Grants + rank_d1 + rank_d2, data = salary)
+stargazer(mod3, mod6, type = "html")
+```
+
+It seems that, once we've coerced our variable into the right class, R knows what to do with it.
+
+# Back to our Mini Project
+
+```{r newdata}
+houses <- read.csv("https://raw.githubusercontent.com/gedeck/practical-statistics-for-data-scientists/master/data/house_sales.csv", sep = "\t")
+```
+
+At the end of last week's class, we had a basic regression model to predict house prices. For now, let's drop property type (by the way, `lm()` *will* automatically treat a character vector as a factor). We'll keep building grade, and continue to consider it as an interval variable (rather than coercing it into a factor), for the sake of making our output easy to read.
+
+```{r house model, results = "asis"}
+hmod1 <- lm(AdjSalePrice ~ SqFtLot + BldgGrade, houses)
+stargazer(hmod1, type = "html")
+```
+
+## Location, location, location
+
+We discussed last week the importance of location for property value, and we identified a variable which represented location - `ZipCode`. However, it seemed a bit unwieldy for a categorical variable.
+
+```{r zipcode}
+houses %>%
+  group_by(ZipCode) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n))
+```
+
+```{r zipcode vis}
+houses %>%
+  group_by(ZipCode) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n)) %>%
+  ggplot(aes(as.factor(reorder(ZipCode, n)), n)) +
+    geom_col() +
+    coord_flip() +
+    xlab("Zip Code")
+```
+
+It looks like this could be a great opportunity to use our data manipulation skills... 
+
+### Task: Recode ZipCode for our model
+
+Let's think about how it would make sense to group or cluster our zipcode data.
+
+```{r grouping on zipcode}
+
+```
+
+```{r comparing our models}
+#hmod1
+#hmod2
+```
